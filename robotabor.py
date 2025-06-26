@@ -35,7 +35,7 @@ class Pilot:
         self.reverse = bool(reverse)
         
         self.speed = 400  # deg/s
-        self.angle_offset = self.left_motor.current_angle() - self.right_motor.current_angle()
+        self._angle_offset = self.left_motor.current_angle() - self.right_motor.current_angle()
         
     def _mm_to_deg(self, mm: float) -> float:
         """
@@ -148,13 +148,13 @@ class Pilot:
         Návratová hodnota:
             float: Aktuální úhel natočení robota v stupních.
         """
-        return math.degrees(math.atan((self.left_motor.current_angle() - self.right_motor.current_angle() - self.angle_offset) * math.pi * self.wheel_diameter / 360 / self.axle_width))
+        return math.degrees(math.atan((self.left_motor.current_angle() - self.right_motor.current_angle() - self._angle_offset) * math.pi * self.wheel_diameter / 360 / self.axle_width))
 
     def reset_angle(self):
         """
         Resetuje aktuální úhel natočení robota na 0 stupňů.
         """
-        self.angle_offset = self.left_motor.current_angle() - self.right_motor.current_angle()
+        self._angle_offset = self.left_motor.current_angle() - self.right_motor.current_angle()
 
     def get_travel(self):
         """
@@ -210,22 +210,29 @@ pilot = Pilot(
     motors.EV3LargeMotor(motors.MotorPort.B),
     motors.EV3LargeMotor(motors.MotorPort.C),
     wheel_diameter=56,
-    axle_width=100,
+    axle_width=110,
     reverse=False
 )
 
-pilot.print_limits()
-pilot.set_acceleration(2000)
-pilot.forward()
+# pilot.set_acceleration(300)
+print(f"Initial angle: {pilot.get_angle()} degrees")
+pilot.travel(1000)
+sleep(1)
+pilot.set_speed(100)
+sleep(1)
+print(f"Current angle: {pilot.get_angle()} degrees")
+pilot.rotate(45)
+print(f"Current angle: {pilot.get_angle()} degrees")
+sleep(1)
+pilot.rotate(-45)
+sleep(1)
+print(f"Current angle: {pilot.get_angle()} degrees")
+pilot.set_speed(400)
+sleep(1)
+pilot.travel(-1000)
+print(f"Current angle: {pilot.get_angle()} degrees")
 sleep(1)
 pilot.stop()
-pilot.backward()
-sleep(1)
-pilot.stop()
-sleep(1)
-pilot.rotate(90)
-sleep(1)
-pilot.rotate(-90)
-sleep(1)
-pilot.stop()
+pilot.reset_angle()
+print(f"Current angle after reset: {pilot.get_angle()} degrees")
 sleep(5)

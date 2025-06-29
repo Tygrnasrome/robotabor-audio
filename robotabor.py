@@ -15,9 +15,9 @@ class Pilot:
         self,
         left_motor: motors.Motor,
         right_motor: motors.Motor,
-        wheel_diameter=56,
-        axle_width=100,
-        reverse=False
+        wheel_diameter: float = 56,
+        axle_width: float = 100,
+        reverse: bool = False
     ):
         """
         Vytvoří DriveBase s *left_motor* a *right_motor*.
@@ -90,14 +90,16 @@ class Pilot:
             wait_until_done (bool, volitelné): Pokud je True, počká, dokud robot nedojede. Výchozí hodnota je True.
         """
         degrees = self._mm_to_deg(distance)
-        speed = self.speed if not self.reverse else -self.speed
-        
-        self.left_motor.rotate_by_angle(degrees, speed, 0)
-        self.right_motor.rotate_by_angle(degrees, speed, 0)
+
+        if self.reverse:
+            degrees = -degrees
+        self.left_motor.rotate_by_angle(degrees, self.speed, 0)
+        self.right_motor.rotate_by_angle(degrees, self.speed, 0)
+
         if wait_until_done:
             self.left_motor.wait_for_movement()
             self.right_motor.wait_for_movement()
-    
+
     def rotate(self, angle: float, wait_until_done: bool = True):
         """
         Otočí robota na místě o daný úhel v stupních.
@@ -106,29 +108,25 @@ class Pilot:
             angle (float): Úhel otočení v stupních.
             wait_until_done (bool, volitelné): Pokud je True, počká, dokud robot nedokončí otáčení. Výchozí hodnota je True.
         """
-        degrees = self._mm_to_deg((angle/360) * math.pi * self.axle_width)
+        arc_mm = (angle / 360) * math.pi * self.axle_width
+        degrees = self._mm_to_deg(arc_mm)
+
         left_speed = self.speed if not self.reverse else -self.speed
         right_speed = -left_speed
-        
-        print(f"Rotating {angle} degrees ({degrees} degrees) with speeds: left={left_speed}, right={right_speed}")
+
         self.left_motor.rotate_by_angle(degrees, left_speed, 0)
         self.right_motor.rotate_by_angle(-degrees, right_speed, 0)
-        
+
         if wait_until_done:
             self.left_motor.wait_for_movement()
             self.right_motor.wait_for_movement()
-    
-    
-    def steer(self, turn_rate: float, angle:float = 0, wait_until_done: bool = True):
+
+    def steer(self, turn_rate: float, angle: float = 0, wait_until_done: bool = True):
         """
-        Otočí robota o daný úhel v milimetrech. Pokud je nějaký *angle*, zastaví se když je dosaženo tohoto úhlu.
-        
-        Argumenty:
-            turn_rate (float): Rychlost otáčení v milimetrech za sekundu.
-            angle (float, volitelné): Úhel otočení v stupních. Výchozí hodnota je 0.
+        Řízená jízda s danou křivostí. (Zatím neimplementováno.)
+        TODO: Implementace.
         """
-        # TODO IMPLEMENT
-        
+        raise NotImplementedError("steer() zatím není implementováno")
 
     def stop(self):
         """
@@ -140,15 +138,19 @@ class Pilot:
     ######################
     ### INFO FUNCTIONS ###
     ######################
-
-    def get_angle(self):
+    def get_angle(self) -> float:
         """
-        Vrátí aktuální úhel natočení robota.
+        Vrátí aktuální úhel natočení robota v stupních. Kladné hodnoty znamenají otočení doprava, záporné hodnoty doleva.
         
-        Návratová hodnota:
-            float: Aktuální úhel natočení robota v stupních.
+        Resetuje se pomocí `reset_angle()`.
         """
-        return math.degrees(math.atan((self.left_motor.current_angle() - self.right_motor.current_angle() - self._angle_offset) * math.pi * self.wheel_diameter / 360 / self.axle_width))
+        left_motor_rotation = self.left_motor.current_angle()
+        right_motor_rotation = self.right_motor.current_angle()
+        
+        rotation_difference = left_motor_rotation - right_motor_rotation - self._angle_offset
+
+        return rotation_difference/(math.pi * self.axle_width * 4) * 360
+
 
     def reset_angle(self):
         """
@@ -156,23 +158,14 @@ class Pilot:
         """
         self._angle_offset = self.left_motor.current_angle() - self.right_motor.current_angle()
 
-    def get_travel(self):
-        """
-        Vrátí aktuální vzdálenost, kterou robot ujel.
-
-        Návratová hodnota:
-            float: Aktuální vzdálenost, kterou robot ujel v milimetrech.
-        """
-        return (self.left_motor.current_angle() + self.right_motor.current_angle()) / 2
-
-    def is_moving(self):
+    def is_moving(self) -> bool:
         """
         Zjistí, zda se robot momentálně pohybuje.
-
-        Návratová hodnota:
-            bool: True, pokud se robot pohybuje, jinak False.
         """
-        return abs(self.left_motor.current_speed) > 0 or abs(self.right_motor.current_speed) > 0
+        return (
+            abs(self.left_motor.current_speed) > 0
+            or abs(self.right_motor.current_speed) > 0
+        )
 
     def get_acceleration(self):
         """
@@ -206,6 +199,7 @@ class Pilot:
 ### TESTING THE PILOT CLASS ###
 ###############################
 from time import sleep
+
 pilot = Pilot(
     motors.EV3LargeMotor(motors.MotorPort.B),
     motors.EV3LargeMotor(motors.MotorPort.C),
@@ -215,24 +209,27 @@ pilot = Pilot(
 )
 
 # pilot.set_acceleration(300)
-print(f"Initial angle: {pilot.get_angle()} degrees")
-pilot.travel(1000)
-sleep(1)
-pilot.set_speed(100)
-sleep(1)
-print(f"Current angle: {pilot.get_angle()} degrees")
-pilot.rotate(45)
-print(f"Current angle: {pilot.get_angle()} degrees")
-sleep(1)
-pilot.rotate(-45)
-sleep(1)
-print(f"Current angle: {pilot.get_angle()} degrees")
-pilot.set_speed(400)
-sleep(1)
-pilot.travel(-1000)
-print(f"Current angle: {pilot.get_angle()} degrees")
-sleep(1)
-pilot.stop()
-pilot.reset_angle()
-print(f"Current angle after reset: {pilot.get_angle()} degrees")
-sleep(5)
+# print(f"Initial angle: {pilot.get_angle()} degrees")
+# pilot.travel(1000)
+# sleep(1)
+# pilot.set_speed(100)
+# sleep(1)
+# print(f"Current angle: {pilot.get_angle()} degrees")
+# pilot.rotate(45)
+# print(f"Current angle: {pilot.get_angle()} degrees")
+# sleep(1)
+# pilot.rotate(-45)
+# sleep(1)
+# print(f"Current angle: {pilot.get_angle()} degrees")
+# pilot.set_speed(400)
+# sleep(1)
+# pilot.travel(-1000)
+# print(f"Current angle: {pilot.get_angle()} degrees")
+# sleep(1)
+# pilot.stop()
+# pilot.reset_angle()
+# print(f"Current angle after reset: {pilot.get_angle()} degrees")
+# sleep(5)
+while True:
+    print(f"Current angle: {pilot.get_angle()} degrees")
+    sleep(1)

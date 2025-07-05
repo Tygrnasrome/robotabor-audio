@@ -39,7 +39,7 @@ class Pilot:
         
     def _mm_to_deg(self, mm: float) -> float:
         """
-        Převede vzdálenost v milimetrech na úhel v stupních.
+        Převede vzdálenost v mm na úhel motoru ve stupních.
         
         Argumenty:
             mm (float): Vzdálenost v milimetrech.
@@ -51,7 +51,7 @@ class Pilot:
     
     def deg_to_mm(self, deg: float) -> float:
         """
-        Převede úhel v stupních na vzdálenost v milimetrech.
+        Převede úhel motoru ve stupních na vzdálenost v mm.
         
         Argumenty:
             deg (float): Úhel v stupních.
@@ -62,7 +62,7 @@ class Pilot:
         return deg * (math.pi * self.wheel_diameter) / 360
     
     def _run_motor_at_speeds(self, left_speed: float, right_speed: float):
-        """Nastaví rychlosti otáčení motorů."""
+        """Nastaví okamžité rychlosti motorů (deg/s, vč. znaménka)."""
         self.left_motor.run_at_speed(left_speed)
         self.right_motor.run_at_speed(right_speed)
         
@@ -75,9 +75,7 @@ class Pilot:
         self._run_motor_at_speeds(direction * self.speed, direction * self.speed)
 
     def backward(self):
-        """
-        Jede zpět rychlostí *speed* (deg/s) dokud se nezavolá `stop()`.
-        """
+        """Jede vzad rychlostí *speed* (deg/s) dokud se nezavolá `stop()`."""
         direction = 1 if self.reverse else -1
         self._run_motor_at_speeds(direction * self.speed, direction * self.speed)
 
@@ -130,7 +128,7 @@ class Pilot:
 
     def stop(self):
         """
-        Zastaví robota.
+        Zastaví oba motory robota.
         """
         self.left_motor.brake()
         self.right_motor.brake()
@@ -140,9 +138,8 @@ class Pilot:
     ######################
     def get_angle(self) -> float:
         """
-        Vrátí aktuální úhel natočení robota v stupních. Kladné hodnoty znamenají otočení doprava, záporné hodnoty doleva.
-        
-        Resetuje se pomocí `reset_angle()`.
+        Vrátí aktuální úhel natočení robota (stupně).  
+        Kladné hodnoty = zatočení doprava (po směru hodin).
         """
         left_motor_rotation = self.left_motor.current_angle()
         right_motor_rotation = self.right_motor.current_angle()
@@ -159,12 +156,10 @@ class Pilot:
         self._angle_offset = self.left_motor.current_angle() - self.right_motor.current_angle()
 
     def is_moving(self) -> bool:
-        """
-        Zjistí, zda se robot momentálně pohybuje.
-        """
+        """Vrátí True když se minimálně jeden motor točí."""
         return (
-            abs(self.left_motor.current_speed) > 0
-            or abs(self.right_motor.current_speed) > 0
+            abs(self.left_motor.current_speed)  > 0 or
+            abs(self.right_motor.current_speed) > 0
         )
 
     def get_acceleration(self):
@@ -187,8 +182,7 @@ class Pilot:
         self.right_motor.limits.acceleration = acceleration
     
     def set_speed(self, speed: float):
-        """
-        Nastaví rychlost otáčení motorů.
+        """Nastaví základní rychlost *speed* (deg/s) otáčení motorů.
         
         Argumenty:
             speed (float): Rychlost v stupních za sekundu. Výchozí hodnota je 400.
@@ -230,6 +224,19 @@ pilot = Pilot(
 # pilot.reset_angle()
 # print(f"Current angle after reset: {pilot.get_angle()} degrees")
 # sleep(5)
+pilot.steer()
+
+
 while True:
     print(f"Current angle: {pilot.get_angle()} degrees")
     sleep(1)
+
+
+
+# Základní testy (odkomentuj na reálném NXT/EV3):
+# pilot.set_speed(200)
+# pilot.steer(  50, 360)   # mírná levá, otočí se o 360°
+# pilot.steer(-150, 180)   # ostrá pravá, 180°
+# pilot.steer(0)           # rovně
+# sleep(2); pilot.stop()
+

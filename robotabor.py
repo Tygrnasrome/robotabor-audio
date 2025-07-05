@@ -223,8 +223,8 @@ class Pilot:
     def is_moving(self) -> bool:
         """Vrátí True když se minimálně jeden motor točí."""
         return (
-            abs(self.left_motor.current_speed) > 0
-            or abs(self.right_motor.current_speed) > 0
+            abs(self.left_motor.current_speed()) > 0
+            or abs(self.right_motor.current_speed()) > 0
         )
 
     def get_acceleration(self):

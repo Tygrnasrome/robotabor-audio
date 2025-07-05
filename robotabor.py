@@ -121,10 +121,73 @@ class Pilot:
 
     def steer(self, turn_rate: float, angle: float = 0, wait_until_done: bool = True):
         """
-        Řízená jízda s danou křivostí. (Zatím neimplementováno.)
-        TODO: Implementace.
+        Řízená jízda po kružnici.
+
+        • *turn_rate* … −200 … 200  
+          0 = rovně, ±100 = vnitřní kolo stojí, ±200 = otáčení na místě  
+          záporné → zatáčí doprava, kladné → doleva
+
+        • *angle*  
+          - `None`  → jede nekonečně dlouho, zastaví `stop()`  
+          - číslo   → ukončí, jakmile se čelo robota natočí o daný počet stupňů
+
+        • *wait_until_done*  
+          `False`  → func vrátí hned, motory jedou dál  
+          `True` → po dokončení (nebo při nekonečné jízdě nevrací)
         """
-        raise NotImplementedError("steer() zatím není implementováno")
+        turn_rate = max(-200, min(200, turn_rate))
+
+        if turn_rate == 0:
+            if angle is not None:
+                raise ValueError(
+                    "U jizdy rovne neni uhel steer(0)"
+                )
+            self.forward()
+            return
+
+        abs_tr = abs(turn_rate)
+        if abs_tr <= 100:
+            ratio = 1 - abs_tr / 100          
+        else:
+            ratio = - (abs_tr - 100) / 100    
+
+        if turn_rate > 0:           
+            left_speed  = self.speed * ratio  
+            right_speed = self.speed     
+        else:                    
+            left_speed  = self.speed
+            right_speed = self.speed * ratio
+
+
+        if self.reverse:
+            left_speed  = -left_speed
+            right_speed = -right_speed
+
+        if angle is None:
+            self._run_motor_at_speeds(left_speed, right_speed)
+            return
+
+
+        mm_per_deg = (math.pi * self.wheel_diameter) / 360
+        v_l_mm = left_speed  * mm_per_deg    
+        v_r_mm = right_speed * mm_per_deg
+
+        omega = (v_r_mm - v_l_mm) / self.axle_width 
+
+        t = math.radians(angle) / abs(omega) 
+
+        s_l_mm = v_l_mm * t
+        s_r_mm = v_r_mm * t
+
+        deg_l = self._mm_to_deg(s_l_mm)
+        deg_r = self._mm_to_deg(s_r_mm)
+
+        self.left_motor.rotate_by_angle( deg_l, abs(left_speed),  0)
+        self.right_motor.rotate_by_angle(deg_r, abs(right_speed), 0)
+
+        if wait_until_done:
+            self.left_motor.wait_for_movement()
+            self.right_motor.wait_for_movement()
 
     def stop(self):
         """
@@ -224,12 +287,12 @@ pilot = Pilot(
 # pilot.reset_angle()
 # print(f"Current angle after reset: {pilot.get_angle()} degrees")
 # sleep(5)
-pilot.steer()
+pilot.steer(0 ,120)
 
 
-while True:
-    print(f"Current angle: {pilot.get_angle()} degrees")
-    sleep(1)
+# while True:
+#     print(f"Current angle: {pilot.get_angle()} degrees")
+#     sleep(1)
 
 
 

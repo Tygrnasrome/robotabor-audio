@@ -50,7 +50,7 @@ class Pilot:
         Návratová hodnota:
             float: Vzdálenost převedená na úhel v stupních.
         """
-        return mm * 360 / (math.pi * self.wheel_diameter)
+        return round(mm * 360 / (math.pi * self.wheel_diameter))
 
     def deg_to_mm(self, deg: float) -> float:
         """
@@ -94,8 +94,8 @@ class Pilot:
 
         if self.reverse:
             degrees = -degrees
-        self.left_motor.rotate_by_angle(degrees, self.speed, 0)
-        self.right_motor.rotate_by_angle(degrees, self.speed, 0)
+        self.left_motor.rotate_by_angle(round(degrees), round(self.speed), 0)
+        self.right_motor.rotate_by_angle(round(degrees), round(self.speed), 0)
 
         if wait_until_done:
             self.left_motor.wait_for_movement()
@@ -115,14 +115,16 @@ class Pilot:
         left_speed = self.speed if not self.reverse else -self.speed
         right_speed = -left_speed
 
-        self.left_motor.rotate_by_angle(degrees, left_speed, 0)
-        self.right_motor.rotate_by_angle(-degrees, right_speed, 0)
+        self.left_motor.rotate_by_angle(round(degrees), round(left_speed), 0)
+        self.right_motor.rotate_by_angle(-round(degrees), round(right_speed), 0)
 
         if wait_until_done:
             self.left_motor.wait_for_movement()
             self.right_motor.wait_for_movement()
 
-    def steer(self, turn_rate: float, angle: float = 0, wait_until_done: bool = True):
+    def steer(
+        self, turn_rate: float, angle: float = None, wait_until_done: bool = True
+    ):
         """
         Řízená jízda po kružnici.
 

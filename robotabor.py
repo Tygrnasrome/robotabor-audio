@@ -66,8 +66,8 @@ class Pilot:
 
     def _run_motor_at_speeds(self, left_speed: float, right_speed: float):
         """Nastaví okamžité rychlosti motorů (deg/s, vč. znaménka)."""
-        self.left_motor.run_at_speed(left_speed)
-        self.right_motor.run_at_speed(right_speed)
+        self.left_motor.run_at_speed(round(left_speed))
+        self.right_motor.run_at_speed(round(right_speed))
 
     ################
     ### MOVEMENT ###
@@ -183,8 +183,8 @@ class Pilot:
         deg_l = self._mm_to_deg(s_l_mm)
         deg_r = self._mm_to_deg(s_r_mm)
 
-        self.left_motor.rotate_by_angle(deg_l, abs(left_speed), 0)
-        self.right_motor.rotate_by_angle(deg_r, abs(right_speed), 0)
+        self.left_motor.rotate_by_angle(round(deg_l), round(abs(left_speed)), 0)
+        self.right_motor.rotate_by_angle(round(deg_r), round(abs(right_speed)), 0)
 
         if wait_until_done:
             self.left_motor.wait_for_movement()

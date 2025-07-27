@@ -82,7 +82,7 @@ class Pilot:
         direction = 1 if self.reverse else -1
         self._run_motor_at_speeds(direction * self.speed, direction * self.speed)
 
-    def travel(self, distance: float, wait_until_done: bool = True):
+    def travel(self, distance: float, wait_until_done: bool = True, timeout: float = None):
         """
         Jede danou vzdálenost v milimetrech.
 
@@ -98,10 +98,14 @@ class Pilot:
         self.right_motor.rotate_by_angle(round(degrees), round(self.speed), 0)
 
         if wait_until_done:
-            self.left_motor.wait_for_movement()
-            self.right_motor.wait_for_movement()
+            if timeout is None:
+                self.left_motor.wait_for_movement()
+                self.right_motor.wait_for_movement()
+            else:
+                self.left_motor.wait_for_movement(timeout*1000)
+                self.right_motor.wait_for_movement(timeout*1000)
 
-    def rotate(self, angle: float, wait_until_done: bool = True):
+    def rotate(self, angle: float, wait_until_done: bool = True, timeout: float = None):
         """
         Otočí robota na místě o daný úhel v stupních.
 
@@ -119,11 +123,15 @@ class Pilot:
         self.right_motor.rotate_by_angle(-round(degrees), round(right_speed), 0)
 
         if wait_until_done:
-            self.left_motor.wait_for_movement()
-            self.right_motor.wait_for_movement()
+            if timeout is None:
+                self.left_motor.wait_for_movement()
+                self.right_motor.wait_for_movement()
+            else:
+                self.left_motor.wait_for_movement(timeout*1000)
+                self.right_motor.wait_for_movement(timeout*1000)
 
     def steer(
-        self, turn_rate: float, angle: float = None, wait_until_done: bool = True
+        self, turn_rate: float, angle: float = None, wait_until_done: bool = True, timeout: float = None
     ):
         """
         Řízená jízda po kružnici.
@@ -187,8 +195,12 @@ class Pilot:
         self.right_motor.rotate_by_angle(round(deg_r), round(abs(right_speed)), 0)
 
         if wait_until_done:
-            self.left_motor.wait_for_movement()
-            self.right_motor.wait_for_movement()
+            if timeout is None:
+                self.left_motor.wait_for_movement()
+                self.right_motor.wait_for_movement()
+            else:
+                self.left_motor.wait_for_movement(timeout*1000)
+                self.right_motor.wait_for_movement(timeout*1000)
 
     def stop(self):
         """

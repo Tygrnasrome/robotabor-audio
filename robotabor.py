@@ -36,6 +36,9 @@ class Pilot:
         self.reverse = bool(reverse)
 
         self.speed = 400  # deg/s
+        self.left_motor.wait_until_ready()
+        self.right_motor.wait_until_ready()
+
         self._angle_offset = (
             self.left_motor.current_angle() - self.right_motor.current_angle()
         )

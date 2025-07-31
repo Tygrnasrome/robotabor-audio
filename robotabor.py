@@ -1,4 +1,6 @@
 import brian.motors as motors
+from brian.audio import play_tone
+import time
 import math
 
 #########################
@@ -270,3 +272,96 @@ class Pilot:
             speed (float): Rychlost v stupních za sekundu. Výchozí hodnota je 400.
         """
         self.speed = speed
+
+class Frequencies:
+    C4 = 261
+    Cs4 = 277
+    D4 = 293
+    Ds4 = 311
+    E4 = 329
+    F4 = 349
+    Fs4 = 370
+    G4 = 392
+    Gs4 = 415
+    A4 = 440
+    As4 = 466
+    B4 = 493
+
+    C5 = 523
+    Cs5 = 554
+    D5 = 587
+    Ds5 = 622
+    E5 = 659
+    F5 = 698
+    Fs5 = 740
+    G5 = 784
+    Gs5 = 831
+    A5 = 880
+    As5 = 932
+    B5 = 987
+
+    C6 = 1046
+    Cs6 = 1108
+    D6 = 1174
+    Ds6 = 1244
+    E6 = 1318
+    F6 = 1396
+    Fs6 = 1480
+    G6 = 1568
+    Gs6 = 1661
+    A6 = 1760
+    As6 = 1864
+    B6 = 1975
+
+class NotePlayer:
+    def __init__(self, repeat=True):
+        self.repeat = repeat
+        self.queue = []
+        self.current_index = 0
+        self.is_playing = False
+        self.note_start_time = 0
+        self.note_duration = 0
+
+    def add_note(self, frequency, duration_ms=1000):
+        """Přidá tón (frekvenci a dobu trvání v ms) do fronty přehrávání."""
+        self.queue.append((frequency, duration_ms))
+
+    def play(self):
+        """Spustí přehrávání fronty tónů od začátku."""
+        self.current_index = 0
+        self.is_playing = True
+        self.note_start_time = 0
+
+    def stop(self):
+        """Zastaví přehrávání tónů a resetuje pozici ve frontě."""
+        self.is_playing = False
+        self.current_index = 0
+
+    def _should_play_next_note(self):
+        """Vrací True, pokud od začátku poslední noty uplynula její doba trvání."""
+        return time.time() * 1000 - self.note_start_time >= self.note_duration
+
+    def update(self):
+        """
+        Aktualizuje přehrávání – pokud je čas na další tón, přehraje jej.
+
+        Tuto metodu je třeba volat pravidelně v hlavní smyčce programu
+        (např. v hlavním cyklu robota), aby bylo možné přehrávat tóny na pozadí,
+        aniž by došlo k blokování běhu programu.
+        """
+        if not self.is_playing or not self.queue:
+            return
+
+        if self.note_start_time == 0 or self._should_play_next_note():
+            frequency, duration = self.queue[self.current_index]
+            play_tone(frequency, duration)
+            self.note_start_time = time.time() * 1000
+            self.note_duration = duration
+
+            self.current_index += 1
+            if self.current_index >= len(self.queue):
+                if self.repeat:
+                    self.current_index = 0
+                else:
+                    self.stop()
+
